@@ -1,0 +1,8 @@
+[package]
+name = "triangle"
+version = "0.1.0"
+authors = ["Philip OKeefe <okeefephil@gmail.com>"]
+
+[dependencies]
+image = "*"
+rand = "*"
