@@ -42,8 +42,8 @@ fn main() {
     while cnt > 0 {
         cnt = cnt - 1;
         num = rand::thread_rng().gen_range(0,3);
-        p.x = (p.x + pts[num].x / 2);
-        p.y = (p.y + pts[num].y / 2);
+        p.x = (p.x + pts[num].x) / 2;
+        p.y = (p.y + pts[num].y) / 2;
         img.put_pixel(p.x, p.y, pixel);
     }
 
