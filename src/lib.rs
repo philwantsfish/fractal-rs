@@ -5,110 +5,148 @@ extern crate line_drawing;
 use std::fs::File;
 use rand::Rng;
 use std::path::Path;
-
 use image::ImageBuffer;
 use image::Luma;
-
 use line_drawing::Bresenham;
 use line_drawing::Point;
 
-
-pub fn print_something() {
-    println!("Printing from lib.rs");
+struct Line {
+    start: Point<i32>,
+    end: Point<i32>,
 }
 
-//pub fn sierpinski_triangle(width: i32, height: i32, iterations: i32) -> &ImageBuffer {
-//
-//}
+impl Line {
+    fn new(p1: Point<i32>, p2: Point<i32>) -> Line {
+        Line { start: p1, end: p2 }
+    }
 
-pub fn make_line(start: Point<i32>, end: Point<i32>) -> Vec<Point<i32>> {
-    Bresenham::new(start, end).collect::<Vec<_>>()
-}
+    fn points(&self) -> Vec<Point<i32>> {
+        Bresenham::new(self.start, self.end).collect::<Vec<_>>()
+    }
 
-#[test]
-fn test_make_line() {
-    assert_eq!(
-        draw_line((0,0), (5,5)),
-        [(0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5)]
-    )
-}
-
-
-fn draw_vec(img: &mut ImageBuffer<Luma<u8>, Vec<u8>>, vec: Vec<Point<i32>>) {
-    let black_point = image::Luma([0u8]);
-
-    for point in vec {
-        let (x, y) = point;
-        let x1 = x as u32;
-        let y1 = y as u32;
-        img.put_pixel(x1, y1, black_point);
+    fn mid(&self) -> Point<i32> {
+        // Draw the line between the two points and take the middle one. This ensures the mid-point
+        // is actually part of the drawn line.
+        let points = self.points();
+        points.get(points.len()/2).unwrap().clone()
     }
 }
 
-fn mid(start: Point<i32>, end: Point<i32>) -> Point<i32> {
-    // Draw the line between the two points and take the middle one. This ensures the mid-point
-    // is actually part of the drawn line.
-    let line = make_line(start, end);
-    line.get(line.len()/2).unwrap().clone()
+
+struct Triangle {
+    p1: Point<i32>,
+    p2: Point<i32>,
+    p3: Point<i32>,
 }
 
-pub fn draw_image(size: u32) -> ImageBuffer<Luma<u8>, Vec<u8>> {
-    let black_point = image::Luma([0u8]);
-    let white_point = image::Luma([255u8]);
 
-    // Get an ImageBuffer that is all white
-    let mut img = image::ImageBuffer::from_fn(size, size, |x, y| {
+impl Triangle {
+    fn lines(&self) -> Vec<Line> {
+        vec![
+            Line { start: self.p1, end: self.p2 },
+            Line { start: self.p3, end: self.p2 },
+            Line { start: self.p1, end: self.p3 }
+        ]
+    }
+}
+
+struct Image {
+    img: ImageBuffer<Luma<u8>, Vec<u8>>
+}
+
+impl Image {
+    fn draw_vec(&mut self, vec: Vec<Point<i32>>) {
+        let black_pixel: Luma<u8> = image::Luma([0u8]);
+        for point in vec {
+            let (x, y) = point;
+            let x1 = x as u32;
+            let y1 = y as u32;
+            self.img.put_pixel(x1, y1, black_pixel);
+        }
+    }
+
+    fn draw_line(&mut self, line: Line) {
+        let points = line.points();
+        Image::draw_vec(self, points);
+    }
+
+    fn draw_triangle(&mut self, triangle: &Triangle) {
+        let lines = triangle.lines();
+        for line in lines {
+            Image::draw_line(self, line);
+        }
+    }
+}
+
+//pub fn make_line(start: Point<i32>, end: Point<i32>) -> Vec<Point<i32>> {
+//    Bresenham::new(start, end).collect::<Vec<_>>()
+//}
+//
+//#[test]
+//fn test_make_line() {
+//    assert_eq!(
+//        draw_line((0,0), (5,5)),
+//        [(0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5)]
+//    )
+//}
+
+
+pub fn draw_image(size: u32, iteration_count: i32) -> ImageBuffer<Luma<u8>, Vec<u8>> {
+    // Create an ImageBuffer that is all white
+    let white_point = image::Luma([255u8]);
+    let mut _white_canvas = image::ImageBuffer::from_fn(size, size, |_x, _y| {
         white_point
     });
 
-    // Draw the initial triangle
+    let mut image = Image { img: _white_canvas };
+
+    // Create the initial triangle
     let size = size as i32 - 1 ;
-    let top = mid((0,0), (size,0));
-    let bottom_left = (0, size);
-    let bottom_right = (size, size);
+    let triangle = Triangle {
+        p1: Line::new((0,0), (size,0)).mid(),
+        p2: (0, size),
+        p3: (size, size),
+    };
 
-    let line1 = make_line(top, bottom_left);
-    let line2 = make_line(top, bottom_right);
-    let line3 = make_line(bottom_left, bottom_right);
+    // Draw the triangle onto the canvas
+    image.draw_triangle(&triangle);
 
-    draw_vec(&mut img, line1);
-    draw_vec(&mut img, line2);
-    draw_vec(&mut img, line3);
+    // Draw the sierpinski triangle
+    draw_sierpinski(&mut image, iteration_count, triangle);
 
-    draw_sierpinski(&mut img, 10, top, bottom_left, bottom_right);
-
-    img
+    image.img
 }
 
-fn draw_sierpinski(img: &mut ImageBuffer<Luma<u8>, Vec<u8>>, iteration_count: i32, top: Point<i32>, bottom_left: Point<i32>, bottom_right: Point<i32>) {
+fn draw_sierpinski(img: &mut Image, iteration_count: i32, triangle: Triangle) {
     if iteration_count == 0 {
         return;
     }
 
-    let p1 = mid(top, bottom_left);
-    let p2 = mid(top, bottom_right);
-    let p3 = mid(bottom_left, bottom_right);
+    let p12 = Line::new(triangle.p1, triangle.p2).mid();
+    let p13 = Line::new(triangle.p1, triangle.p3).mid();
+    let p23 = Line::new(triangle.p2, triangle.p3).mid();
 
-    let line1 = make_line(p1, p2);
-    let line2 = make_line(p2, p3);
-    let line3 = make_line(p1, p3);
+    // Draw the inner triangle
+    let inner_triangle = Triangle {
+        p1: p12,
+        p2: p13,
+        p3: p23,
+    };
+    img.draw_triangle(&inner_triangle);
 
-    draw_vec(img, line1);
-    draw_vec(img, line2);
-    draw_vec(img, line3);
-
+    // Go to next iteration
     let iteration_count = iteration_count - 1;
-    draw_sierpinski(img, iteration_count, top, p1, p2);
-    draw_sierpinski(img, iteration_count, p1, bottom_left, p3);
-    draw_sierpinski(img, iteration_count, p2, p3, bottom_right);
+    draw_sierpinski(img, iteration_count, Triangle { p1: triangle.p1, p2: p12, p3: p13 });
+    draw_sierpinski(img, iteration_count, Triangle { p1: p12, p2: triangle.p2, p3: p23 });
+    draw_sierpinski(img, iteration_count, Triangle { p1: p13, p2: p23, p3: triangle.p3 });
 }
-
 
 pub fn write_to_file(img: ImageBuffer<Luma<u8>, Vec<u8>>, filename: &str) {
     let ref mut fout = File::create(&Path::new(filename)).unwrap();
     let _ = image::ImageLuma8(img).save(fout, image::PNG);
 }
 
+// Uses chaos method.
 pub fn online_sierpinski_triangle() {
     /// Points used to build the fractal images
     pub struct Point {
