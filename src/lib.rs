@@ -62,6 +62,15 @@ struct Image {
 }
 
 impl Image {
+    fn new(size: u32) -> Image {
+        // Create an ImageBuffer that is all white
+        let white_point = image::Luma([255u8]);
+        let mut _white_canvas = image::ImageBuffer::from_fn(size, size, |_x, _y| {
+            white_point
+        });
+        Image { img: _white_canvas }
+    }
+
     fn draw_vec(&mut self, vec: Vec<Point<i32>>) {
         let black_pixel: Luma<u8> = image::Luma([0u8]);
         for point in vec {
@@ -99,13 +108,7 @@ impl Image {
 
 
 pub fn draw_image(size: u32, iteration_count: i32) -> ImageBuffer<Luma<u8>, Vec<u8>> {
-    // Create an ImageBuffer that is all white
-    let white_point = image::Luma([255u8]);
-    let mut _white_canvas = image::ImageBuffer::from_fn(size, size, |_x, _y| {
-        white_point
-    });
-
-    let mut image = Image { img: _white_canvas };
+    let mut image = Image::new(size);
 
     // Create the initial triangle
     let size = size as i32 - 1 ;
