@@ -41,6 +41,13 @@ struct Triangle {
 
 
 impl Triangle {
+    fn new(p1: Point<i32>, p2: Point<i32>, p3: Point<i32>) -> Triangle {
+        Triangle {
+            p1: p1,
+            p2: p2,
+            p3: p3,
+        }
+    }
     fn lines(&self) -> Vec<Line> {
         vec![
             Line { start: self.p1, end: self.p2 },
@@ -102,11 +109,11 @@ pub fn draw_image(size: u32, iteration_count: i32) -> ImageBuffer<Luma<u8>, Vec<
 
     // Create the initial triangle
     let size = size as i32 - 1 ;
-    let triangle = Triangle {
-        p1: Line::new((0,0), (size,0)).mid(),
-        p2: (0, size),
-        p3: (size, size),
-    };
+    let triangle = Triangle::new(
+        Line::new((0,0), (size,0)).mid(),
+        (0, size),
+        (size, size),
+    );
 
     // Draw the triangle onto the canvas
     image.draw_triangle(&triangle);
@@ -127,18 +134,14 @@ fn draw_sierpinski(img: &mut Image, iteration_count: i32, triangle: Triangle) {
     let p23 = Line::new(triangle.p2, triangle.p3).mid();
 
     // Draw the inner triangle
-    let inner_triangle = Triangle {
-        p1: p12,
-        p2: p13,
-        p3: p23,
-    };
+    let inner_triangle = Triangle::new(p12, p13, p23);
     img.draw_triangle(&inner_triangle);
 
     // Go to next iteration
     let iteration_count = iteration_count - 1;
-    draw_sierpinski(img, iteration_count, Triangle { p1: triangle.p1, p2: p12, p3: p13 });
-    draw_sierpinski(img, iteration_count, Triangle { p1: p12, p2: triangle.p2, p3: p23 });
-    draw_sierpinski(img, iteration_count, Triangle { p1: p13, p2: p23, p3: triangle.p3 });
+    draw_sierpinski(img, iteration_count, Triangle::new(triangle.p1, p12, p13));
+    draw_sierpinski(img, iteration_count, Triangle::new(p12, triangle.p2, p23));
+    draw_sierpinski(img, iteration_count, Triangle::new(p13, p23, triangle.p3));
 }
 
 pub fn write_to_file(img: ImageBuffer<Luma<u8>, Vec<u8>>, filename: &str) {
