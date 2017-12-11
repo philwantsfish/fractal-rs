@@ -46,16 +46,11 @@ fn draw_vec(img: &mut ImageBuffer<Luma<u8>, Vec<u8>>, vec: Vec<Point<i32>>) {
 }
 
 fn mid(start: Point<i32>, end: Point<i32>) -> Point<i32> {
-    let (x1, y1) = start;
-    let (x2, y2) = end;
-    let mid_x = (x2 + x1) / 2;
-    let mid_y = (y2 + y1) / 2;
-    (mid_x, mid_y)
+    // Draw the line between the two points and take the middle one. This ensures the mid-point
+    // is actually part of the drawn line.
+    let line = make_line(start, end);
+    line.get(line.len()/2).unwrap().clone()
 }
-
-// An upside down equilateral triangle, points are top-left, top-right, bottom
-struct Triangle (i32, i32, i32);
-
 
 pub fn draw_image(size: u32) -> ImageBuffer<Luma<u8>, Vec<u8>> {
     let black_point = image::Luma([0u8]);
@@ -80,7 +75,7 @@ pub fn draw_image(size: u32) -> ImageBuffer<Luma<u8>, Vec<u8>> {
     draw_vec(&mut img, line2);
     draw_vec(&mut img, line3);
 
-    draw_sierpinski(&mut img, 6, top, bottom_left, bottom_right);
+    draw_sierpinski(&mut img, 10, top, bottom_left, bottom_right);
 
     img
 }
