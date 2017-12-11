@@ -1,5 +1,5 @@
 [package]
-name = "triangle"
+name = "sierpinski"
 version = "0.1.0"
 authors = ["Philip OKeefe <okeefephil@gmail.com>"]
 

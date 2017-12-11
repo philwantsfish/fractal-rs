@@ -1,6 +1,6 @@
 /// A project to generate fractal images
 
-extern crate triangle;
+extern crate sierpinski;
 
 use std::env;
 
@@ -49,6 +49,6 @@ fn main() {
 
     println!("Screen size is {}, iterations is {}, filename {}", size, iterations, filename);
 
-    let img = triangle::draw_image(size, iterations);
-    triangle::write_to_file(img, filename);
+    let img = sierpinski::draw_image(size, iterations);
+    sierpinski::write_to_file(img, filename);
 }
